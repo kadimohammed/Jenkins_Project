@@ -1,0 +1,9 @@
+version: '3.8'
+
+services:
+  aspnet_app:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+    ports:
+      - "5003:80"
+    restart: always 
