@@ -2,8 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_COMPOSE = 'docker-compose'
-        APP_NAME = 'aspnet_app'
+        DOCKER = '/usr/bin/docker'
     }
 
     stages {
@@ -15,50 +14,34 @@ pipeline {
 
         stage('Build') {
             steps {
-                sh "${DOCKER_COMPOSE} build"
+                sh '''
+                    whoami
+                    id
+                    ${DOCKER} ps
+                    ${DOCKER} --version
+                    ${DOCKER} compose version
+                    sudo ${DOCKER} compose build
+                '''
             }
         }
 
         stage('Test') {
             steps {
                 script {
-                    // Run tests for ASP.NET application
-                    dir('AspNetApp') {
-                        sh 'dotnet test'
-                    }
+                    sh '''
+                        export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin:$PATH"
+                        dotnet --version
+                        cd AspNetApp
+                        dotnet test
+                    '''
                 }
             }
         }
 
-        stage('Deploy to Dev') {
-            when {
-                branch 'develop'
-            }
+        stage('Deploy') {
             steps {
                 script {
-                    sh "${DOCKER_COMPOSE} -f docker-compose.yml -f docker-compose.dev.yml up -d"
-                }
-            }
-        }
-
-        stage('Deploy to Staging') {
-            when {
-                branch 'staging'
-            }
-            steps {
-                script {
-                    sh "${DOCKER_COMPOSE} -f docker-compose.yml -f docker-compose.staging.yml up -d"
-                }
-            }
-        }
-
-        stage('Deploy to Production') {
-            when {
-                branch 'main'
-            }
-            steps {
-                script {
-                    sh "${DOCKER_COMPOSE} -f docker-compose.yml -f docker-compose.prod.yml up -d"
+                    sh "sudo ${DOCKER} compose up -d"
                 }
             }
         }
@@ -66,8 +49,9 @@ pipeline {
 
     post {
         always {
-            // Cleanup
-            sh "${DOCKER_COMPOSE} down"
+            script {
+                sh "sudo ${DOCKER} compose down || true"
+            }
         }
     }
 } 
