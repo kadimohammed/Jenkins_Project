@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DOCKER = '/usr/bin/docker'
-        CONTAINER_NAME_PREFIX = 'pipeline'
+        PROJECT_NAME = "${env.JOB_NAME.replaceAll(/[^a-zA-Z0-9_]/, '_')}"
     }
 
     stages {
@@ -23,8 +23,8 @@ pipeline {
                     ${DOCKER} compose version
                     
                     # Stop and remove existing containers if they exist
-                    sudo ${DOCKER} compose down --remove-orphans
-                    sudo ${DOCKER} compose build
+                    sudo ${DOCKER} compose -p ${PROJECT_NAME} down --remove-orphans
+                    sudo ${DOCKER} compose -p ${PROJECT_NAME} build
                 '''
             }
         }
@@ -47,10 +47,10 @@ pipeline {
                 script {
                     sh '''
                         # Stop and remove existing containers
-                        sudo ${DOCKER} compose down --remove-orphans
+                        sudo ${DOCKER} compose -p ${PROJECT_NAME} down --remove-orphans
                         
                         # Start new containers
-                        sudo ${DOCKER} compose up -d
+                        sudo ${DOCKER} compose -p ${PROJECT_NAME} up -d
                     '''
                 }
             }
@@ -59,16 +59,14 @@ pipeline {
 
     post {
         always {
-            node('any') {
-                script {
-                    sh '''
-                        # Cleanup: Stop and remove containers
-                        sudo ${DOCKER} compose down --remove-orphans || true
-                        
-                        # Remove unused Docker resources
-                        sudo ${DOCKER} system prune -f || true
-                    '''
-                }
+            script {
+                sh '''
+                    # Cleanup: Stop and remove containers
+                    sudo ${DOCKER} compose -p ${PROJECT_NAME} down --remove-orphans || true
+                    
+                    # Remove unused Docker resources
+                    sudo ${DOCKER} system prune -f || true
+                '''
             }
         }
     }
