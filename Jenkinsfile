@@ -4,7 +4,6 @@ pipeline {
     environment {
         DOCKER = '/usr/bin/docker'
         CONTAINER_NAME_PREFIX = 'pipeline'
-        GIT_CREDS = credentials('github-credentials')
     }
 
     stages {
@@ -56,41 +55,20 @@ pipeline {
                 }
             }
         }
-
-        stage('Push to Main') {
-            steps {
-                script {
-                    sh '''
-                        git config --global user.email "jenkins@example.com"
-                        git config --global user.name "Jenkins Pipeline"
-                        
-                        # Configure git to use credentials
-                        git remote set-url origin https://${GIT_CREDS_USR}:${GIT_CREDS_PSW}@github.com/kadimohammed/Jenkins_Project.git
-                        
-                        # Add all changes
-                        git add .
-                        
-                        # Commit changes (will only commit if there are changes)
-                        git diff --quiet && git diff --staged --quiet || git commit -m "Jenkins Pipeline: Automated commit [skip ci]"
-                        
-                        # Push to main branch
-                        git push origin HEAD:main
-                    '''
-                }
-            }
-        }
     }
 
     post {
         always {
-            script {
-                sh '''
-                    # Cleanup: Stop and remove containers
-                    sudo ${DOCKER} compose down --remove-orphans || true
-                    
-                    # Remove unused Docker resources
-                    sudo ${DOCKER} system prune -f || true
-                '''
+            node('any') {
+                script {
+                    sh '''
+                        # Cleanup: Stop and remove containers
+                        sudo ${DOCKER} compose down --remove-orphans || true
+                        
+                        # Remove unused Docker resources
+                        sudo ${DOCKER} system prune -f || true
+                    '''
+                }
             }
         }
     }
