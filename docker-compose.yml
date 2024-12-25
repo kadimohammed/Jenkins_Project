@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  jenkins:
+  jenkins_service:
     build:
       context: .
       dockerfile: jenkins.Dockerfile
@@ -10,7 +10,7 @@ services:
     ports:
       - "8080:8080"
       - "50000:50000"
-    container_name: jenkins
+    container_name: ${PROJECT_NAME:-jenkins}_jenkins_service
     volumes:
       - jenkins_home:/var/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock
@@ -23,13 +23,13 @@ services:
       dockerfile: Dockerfile
     ports:
       - "5000:80"
-    container_name: aspnet_app
+    container_name: ${PROJECT_NAME:-jenkins}_aspnet_app
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
     networks:
       - app_network
     depends_on:
-      - jenkins
+      - jenkins_service
 
 networks:
   app_network:
